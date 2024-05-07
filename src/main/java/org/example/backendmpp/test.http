@@ -1,0 +1,47 @@
+
+#POST http://localhost:8080/api/cars/create
+#Content-Type: application/json
+#
+#{
+#  "make": "Toyota",
+#  "model": "Camry",
+#  "year": 2022,
+#  "color": "Silver",
+#  "mileage": 15000,
+#  "accidents": 0,
+#  "engineCapacity": 2000,
+#  "engineType": "Gasoline",
+#  "price": 25000,
+#  "about": "This is a reliable sedan with low mileage."
+#}
+
+POST http://localhost:8080/api/locations/create
+Content-Type: application/json
+{
+  "name": "New York",
+  "address": "123 Main St"
+}
+
+#GET http://localhost:8080/api/cars/get
+#GET http://localhost:8080/api/cars/get/2
+
+#GET http://localhost:8080/api/locations/get
+
+#DELETE http://localhost:8080/api/cars/delete/1
+
+#PUT http://localhost:8080/api/cars/update/2 HTTP/1.1
+#Host: your-api-host.com
+#Content-Type: application/json
+#
+#{
+#  "make": "Bugatti",
+#  "model": "Chiron",
+#  "year": 2024,
+#  "color": "Black",
+#  "mileage": 0,
+#  "accidents": 0,
+#  "engineCapacity": 7993,
+#  "engineType": "W16",
+#  "price": 3000000,
+#  "about": "The Bugatti Chiron is a mid-engine two-seater sports car developed and manufactured in Molsheim, France."
+#}
