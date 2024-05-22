@@ -98,6 +98,7 @@ public class CarController {
             Car newCar = convertToCar(carDTO);
             Car savedCar = carRepository.save(newCar);
             CarResponseDTO responseDTO = convertToCarResponseDTO(savedCar);
+            System.out.println("Car created");
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
         }
         catch (Exception e){

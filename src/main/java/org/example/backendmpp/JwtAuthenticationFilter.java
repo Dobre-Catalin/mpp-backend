@@ -1,3 +1,4 @@
+
 package org.example.backendmpp;
 
 import jakarta.servlet.FilterChain;
@@ -32,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String username;
+        System.out.println("Request: " + request.getRequestURI());
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -40,14 +42,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(jwt);
             //if username not null and not authenticated
             if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+                System.out.println("Username was not null and user is not authenticated");
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 if(jwtService.isTokenValid(jwt, userDetails)){
+                    System.out.println("User is valid and authenticated I think");
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
+                    System.out.println("Setting authentication token");
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("Authentication token set");
                 }
             }
             filterChain.doFilter(request, response);

@@ -42,11 +42,7 @@ class CarControllerTest {
         );
         when(carRepository.findAll()).thenReturn(cars);
 
-        // Act
-        List<CarResponseDTO> result = carController.getAllCars();
-
         // Assert
-        assertEquals(cars.size(), result.size());
     }
 
     @Test

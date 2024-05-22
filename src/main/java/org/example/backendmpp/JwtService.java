@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Service
 public class JwtService {
@@ -51,7 +52,13 @@ public class JwtService {
 
         public boolean isTokenValid(String jwt, UserDetails userDetails) {
             // Check if the JWT is valid
+            System.out.println("JWT: " + jwt);
+            System.out.println("UserDetails: " + userDetails);
             final String username = extractUsername(jwt);
+            System.out.println("Username: " + username);
+            System.out.println("Token expired: " + isTokenExpired(jwt));
+            System.out.println("Username equals: " + username.equals(userDetails.getUsername()));
+            System.out.println("Result " + (username.equals(userDetails.getUsername()) && !isTokenExpired(jwt)));
             return (username.equals(userDetails.getUsername()) && !isTokenExpired(jwt));
         }
 
