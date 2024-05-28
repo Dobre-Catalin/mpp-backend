@@ -47,8 +47,9 @@ public class SecurityConfig {
                     new User("user", "user", Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
             );
 
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfig corsConfig) throws Exception {
 /*
         http.
                 authorizeRequests().
@@ -75,8 +76,11 @@ public class SecurityConfig {
 
  */
 
-        http.exceptionHandling(c -> c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .csrf( AbstractHttpConfigurer :: disable).sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        http.exceptionHandling(c -> c.authenticationEntryPoint(
+                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .cors(c -> c.configurationSource(corsConfig.corsConfigurationSource()))
+                .csrf( AbstractHttpConfigurer :: disable)
+                .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req->req.anyRequest().permitAll());
 
         return http.build();
