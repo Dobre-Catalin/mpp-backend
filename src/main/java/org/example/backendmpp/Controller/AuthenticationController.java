@@ -18,6 +18,7 @@ import org.springframework.ws.server.endpoint.adapter.DefaultMethodEndpointAdapt
 @RestController
 @RequestMapping("/api/login")
 @RequiredArgsConstructor
+@CrossOrigin
 public class AuthenticationController {
     private final AuthenticationService service;
 
