@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/locations")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin
 public class LocationController {
     private final LocationRepository locationRepository;
 
@@ -44,7 +44,6 @@ public class LocationController {
         return new LocationResponseDTO(location.getName(), location.getAddress(), (int) id.intValue(), carCount);
     }
 
-    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/get")
     public List<LocationResponseDTO> getAllLocations() {
         List<Location> locations = (List<Location>) locationRepository.findAll();
@@ -62,13 +61,11 @@ public class LocationController {
         return ids;
     }
 
-    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/check-backend-connection")
     public String checkBackendConnection() {
         return "Backend server is reachable.";
     }
 
-    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/get/{id}")
     public List<LocationResponseDTO> getLocationByID(@PathVariable("id") Integer id) {
         Optional<Location> location = locationRepository.findById(Long.valueOf(id));

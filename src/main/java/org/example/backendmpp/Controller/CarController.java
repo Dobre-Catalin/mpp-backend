@@ -68,7 +68,7 @@ public class CarController {
     }
 
     @RequestMapping(value = "/get-more-entities", method = RequestMethod.GET)
-    @CrossOrigin(origins = "http://localhost:5173")
+    @CrossOrigin
     public ResponseEntity<Page<CarResponseDTO>> getMoreEntities(@PageableDefault(size = 50) Pageable pageable) {
         Page<Car> carsPage = carRepository.findAll(pageable);
         Page<CarResponseDTO> carDTOsPage = carsPage.map(this::convertToCarResponseDTO);
