@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 @NoArgsConstructor
 public class AuthenticationResponse {
     private String token;
+    private String role;
 }
 
 

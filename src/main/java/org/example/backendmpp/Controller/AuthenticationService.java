@@ -31,8 +31,10 @@ public class AuthenticationService {
         }
         var jwtToken = jwtService.generateToken(user);
         System.out.println("JWT Token: " + jwtToken);
+        System.out.println("Role: " + user.getRole());
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .role(user.getRole().toString())
                 .build();
     }
 
@@ -49,6 +51,35 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .token(jwtToken)
         .build();
+    }
+
+    public AuthenticationResponse registerAdmin(RegisterRequest request) {
+        var user = User.builder()
+                .firstname(request.getFirstName())
+                .lastname(request.getLastName())
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ADMIN)
+                .build();
+        repository.save(user);
+        var jwtToken = jwtService.generateToken(user);
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+        .build();
+    }
+
+    public AuthenticationResponse authenticateAdmin(AuthenticationRequest request) {
+
+        var user = repository.findByUsername(request.getUsername()).orElseThrow();
+        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
+            System.out.println("Password does not match");
+            return null;
+        }
+        var jwtToken = jwtService.generateToken(user);
+        System.out.println("JWT Token: " + jwtToken);
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .build();
     }
 }
 
