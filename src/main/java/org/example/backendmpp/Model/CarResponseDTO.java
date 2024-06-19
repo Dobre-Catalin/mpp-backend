@@ -1,5 +1,7 @@
 package org.example.backendmpp.Model;
 
+import java.util.Date;
+
 public record CarResponseDTO(
         Integer ID,
         String make,
@@ -12,6 +14,8 @@ public record CarResponseDTO(
         String engineType,
         int price,
         String location,
-        String about
+        String about,
+        Integer salePrice,
+        Date saleDate
 ) {
 }

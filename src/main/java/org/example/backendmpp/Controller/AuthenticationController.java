@@ -5,16 +5,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.backendmpp.JwtService;
+import org.example.backendmpp.Model.User.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.parameters.P;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ws.server.endpoint.adapter.DefaultMethodEndpointAdapter;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/login")
@@ -36,6 +38,7 @@ public class AuthenticationController {
         System.out.println("Response is not null");
         System.out.println("Response: " + response);
         System.out.println("Token: " + response.getToken());
+
         return ResponseEntity.ok(response);
     }
 
@@ -62,39 +65,40 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/loginAdmin")
-    public ResponseEntity<AuthenticationResponse> loginAdmin(
-            @RequestBody AuthenticationRequest request
+    @PostMapping("/registerManager")
+    public ResponseEntity<AuthenticationResponse> registerManager(
+            @RequestBody RegisterRequest request
     ) {
-        var response = service.authenticateAdmin(request);
+        var response = service.registerManager(request);
         if (response == null) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(response);
     }
-}
 
-
-
-/*
-@RestController
-@RequestMapping("/api/auth")
-public class AuthenticationController {
-
-    private final AuthenticationService authenticationService;
-
-    public AuthenticationController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    //get all users
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers(){
+        return ResponseEntity.ok(service.getAllUsers());
     }
 
-    @PostMapping("/{username}/{password}")
-    public ResponseEntity<AuthenticationResponse> authenticateUser(@PathVariable String username, @PathVariable String password) {
-        AuthenticationResponse response = authenticationService.authenticateUser(username, password);
-        if (response.isAuthenticated()) {
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.badRequest().build();
+
+    //edit user
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<User> editUser(
+            @PathVariable("id") Integer id,
+            @RequestBody User user
+    ){
+        service.editUser(user, id);
+        return ResponseEntity.ok(user);
+    }
+
+    //delete user
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable("id") Integer id
+    ){
+        service.deleteUser(id);
+        return ResponseEntity.ok().build();
     }
 }
-
- */

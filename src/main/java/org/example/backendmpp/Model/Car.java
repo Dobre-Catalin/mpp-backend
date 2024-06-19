@@ -1,7 +1,12 @@
 package org.example.backendmpp.Model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
+
+import java.util.Date;
 
 @Entity
 public class Car {
@@ -19,6 +24,16 @@ public class Car {
     private int price;
     private String about;
 
+    @Nullable
+    @Getter
+    @Setter
+    private Integer salePrice;
+
+    @Nullable
+    @Getter
+    @Setter
+    private Date saleDate;
+
     @ManyToOne
     @JoinColumn(name = "location_id")
     private Location location;
@@ -27,7 +42,7 @@ public class Car {
     public Car() {
     }
 
-    public Car(String make, String model, int year, String color, int mileage, int accidents, int engineCapacity, String engineType, int price, String about, Location location) {
+    public Car(String make, String model, int year, String color, int mileage, int accidents, int engineCapacity, String engineType, int price, String about, Location location, Integer salePrice, Date saleDate) {
         this.make = make;
         this.model = model;
         this.year = year;
@@ -39,6 +54,8 @@ public class Car {
         this.price = price;
         this.about = about;
         this.location = location;
+        this.salePrice = salePrice;
+        this.saleDate = saleDate;
     }
 
     public Integer getId() {

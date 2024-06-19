@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -18,10 +19,12 @@ import java.util.Optional;
 @CrossOrigin
 public class LocationController {
     private final LocationRepository locationRepository;
+    private final AuthenticationService authenticationService;
 
     @Autowired
-    public LocationController(LocationRepository locationRepository) {
+    public LocationController(LocationRepository locationRepository, AuthenticationService authenticationService) {
         this.locationRepository = locationRepository;
+        this.authenticationService = authenticationService;
     }
 
     public Location convertToLocation(LocationDTO locationDTO){
@@ -46,10 +49,24 @@ public class LocationController {
 
     @GetMapping("/get")
     public List<LocationResponseDTO> getAllLocations() {
-        List<Location> locations = (List<Location>) locationRepository.findAll();
-        List<LocationResponseDTO> locationDTOs = locations.stream()
-                .map(this::convertToLocationDTO)
-                .collect(Collectors.toList());
+        if (authenticationService.checkUserIsAdmin()) {
+            List<Location> foundLocations = (List<Location>) locationRepository.findAll();
+            List<LocationResponseDTO> locationDTOs = new ArrayList<>();
+            for (Location location : foundLocations) {
+                locationDTOs.add(convertToLocationDTO(location));
+            }
+            return locationDTOs;
+        }
+
+        List<Integer> locationsAccessible = authenticationService.getUserLocations();
+        List<Location> foundLocations = (List<Location>) locationRepository.findAll();
+        List<LocationResponseDTO> locationDTOs = new ArrayList<>();
+        //filter the locations that are accessible to the user
+        for (Location location : foundLocations) {
+            if (locationsAccessible.contains(location.getId().intValue())) {
+                locationDTOs.add(convertToLocationDTO(location));
+            }
+        }
         return locationDTOs;
     }
 

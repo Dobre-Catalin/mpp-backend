@@ -2,6 +2,7 @@ package org.example.backendmpp.Controller;
 
 import jakarta.transaction.Transactional;
 import org.example.backendmpp.Model.*;
+import org.example.backendmpp.Model.User.User;
 import org.example.backendmpp.Repository.CarRepository;
 import org.example.backendmpp.Repository.CarRepository;
 import org.example.backendmpp.Repository.LocationRepository;
@@ -19,9 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -32,6 +31,9 @@ public class CarController {
     private final CarRepository carRepository;
 
     Integer entitiesSentUpTo;
+    private List<Integer> locationIdsAccessible = List.of();
+    private Integer lastPageSent = -1;
+    Page lastPageSentContent = Page.empty();
 
     Integer entitiesToAdd;
     Integer interval;
@@ -44,6 +46,12 @@ public class CarController {
     private final WebSocketHandler webSocketHandler;
     @Autowired
     private LocationController locationController;
+    @Autowired
+    private AuthenticationController authenticationController;
+    @Autowired
+    private AuthenticationService authenticationService;
+    @Autowired
+    private LocationRepository locationRepository;
 
     @GetMapping("/location-ids")
     public List<Long> getLocationIdsFromLocationService() {
@@ -60,6 +68,7 @@ public class CarController {
         entitiesSentUpTo = 0;
 
         webSocketHandler = new WebSocketHandler();
+
     }
 
     @GetMapping("/check-backend-connection")
@@ -70,10 +79,95 @@ public class CarController {
     @RequestMapping(value = "/get-more-entities", method = RequestMethod.GET)
     @CrossOrigin
     public ResponseEntity<Page<CarResponseDTO>> getMoreEntities(@PageableDefault(size = 50) Pageable pageable) {
-        Page<Car> carsPage = carRepository.findAll(pageable);
+        Collection<Location> locations = new ArrayList<>();
+
+        //check if locationIdAccessible is empty
+        if(locationIdsAccessible.isEmpty()){
+            locationIdsAccessible = authenticationService.getUserLocations();
+
+            if(locationIdsAccessible.isEmpty()){
+                return ResponseEntity.badRequest().build();
+            }
+
+            for (Integer locationId : locationIdsAccessible) {
+                Optional<Location> location = locationRepository.findById(locationId.longValue());
+                location.ifPresent(locations::add);
+            }
+            lastPageSent = -1;
+        }
+        System.out.println("Location ids accessible: " + locationIdsAccessible);
+        ///check if locationIdsAccessible is the same as locationIds
+        if(!locationIdsAccessible.equals(authenticationService.getUserLocations())){
+            locationIdsAccessible = authenticationService.getUserLocations();
+
+            for (Integer locationId : locationIdsAccessible) {
+                Optional<Location> location = locationRepository.findById(locationId.longValue());
+                location.ifPresent(locations::add);
+            }
+            lastPageSent = -1;
+        }
+
+        if(lastPageSent == pageable.getPageNumber()){
+            return ResponseEntity.ok(lastPageSentContent);
+        }
+
+        Page<Car> carsPage = carRepository.findCarsByLocationIsInAndSalePriceIsNull(locations, pageable);
         Page<CarResponseDTO> carDTOsPage = carsPage.map(this::convertToCarResponseDTO);
+
+        lastPageSent++;
+        lastPageSentContent = carDTOsPage;
         return ResponseEntity.ok(carDTOsPage);
     }
+
+    @GetMapping("/get-sellable")
+    @CrossOrigin
+    public List<CarResponseDTO> getSellableCars() {
+        List<Car> cars = carRepository.findCarsBySalePriceIsNull();
+        List<Integer> locationIds = authenticationService.getUserLocations();
+        List<Car> sellableCars = new ArrayList<>();
+        for (Car car : cars) {
+            if(locationIds.contains(car.getLocation().getId().intValue())){
+                sellableCars.add(car);
+            }
+        }
+        List<CarResponseDTO> carDTOs = sellableCars.stream()
+                .map(this::convertToCarResponseDTO)
+                .collect(Collectors.toList());
+        return carDTOs;
+    }
+
+    @GetMapping("/get/sold/{id}")
+    @CrossOrigin
+    public ResponseEntity<List<CarResponseDTO>> getSoldCarsById(@PathVariable("id") Integer id) {
+        Location location = locationRepository.findById(id.longValue()).orElseThrow();
+        List<Car> cars = carRepository.findCarsBySalePriceIsNotNullAndLocation(location);
+        if(cars.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        //send all the cars as response dtos
+        List<CarResponseDTO> carDTOs = cars.stream()
+                .map(this::convertToCarResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(carDTOs);
+    }
+
+    @PostMapping("sell/{id}")
+    @CrossOrigin
+    public String sellCar(@PathVariable("id") Integer id, @RequestBody SaleDTO saleDTO) {
+        Car car = carRepository.findById(id).orElseThrow();
+        if(saleDTO.price() < 0){
+            return "Invalid sale price";
+        }
+        //if the car is sold at more than 20% of the original price, don't allow the sale
+        if(car.getPrice() > saleDTO.price() * 1.2){
+            return "Invalid sale price";
+        }
+        car.setSalePrice(saleDTO.price());
+        car.setSaleDate(saleDTO.date());
+        carRepository.save(car);
+        return "Car sold";
+    }
+
 /*
     @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/get")
@@ -136,13 +230,13 @@ public class CarController {
         location.setId((long) carDTO.locationId());
         return new Car(carDTO.make(), carDTO.model(), carDTO.year(),
                 carDTO.color(), carDTO.mileage(), carDTO.accidents(), carDTO.engineCapacity(),
-                carDTO.engineType(), carDTO.price(), carDTO.about(), location);
+                carDTO.engineType(), carDTO.price(), carDTO.about(), location, carDTO.salePrice(), carDTO.saleDate());
     }
 
     private CarResponseDTO convertToCarResponseDTO(Car car) {
         return new CarResponseDTO(car.getId(), car.getMake(), car.getModel(), car.getYear(),
                 car.getColor(), car.getMileage(), car.getAccidents(), car.getEngineCapacity(),
-                car.getEngineType(), car.getPrice(), car.getAbout(), car.getLocation().getName());
+                car.getEngineType(), car.getPrice(), car.getAbout(), car.getLocation().getName(), car.getSalePrice(), car.getSaleDate());
     }
 
     @PostMapping("/settings")
@@ -172,7 +266,7 @@ public class CarController {
                 Location location = new Location();
                 location.setId(logcationId);
 
-                CarDTO carDTO = new CarDTO(carMakes.get(randomMake), carModels.get(randomModel), 2020, carColors.get(randomColor), 20000, 0, 2000, carEngineTypes.get(randomEngineType), randomNumber, "Good condition", logcationId.intValue());
+                CarDTO carDTO = new CarDTO(carMakes.get(randomMake), carModels.get(randomModel), 2020, carColors.get(randomColor), 20000, 0, 2000, carEngineTypes.get(randomEngineType), randomNumber, "Good condition", logcationId.intValue(), null, null);
                 Car car = convertToCar(carDTO);
 
                 carRepository.save(car);

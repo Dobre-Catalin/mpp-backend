@@ -12,7 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +24,9 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationResponse autheticate(AuthenticationRequest request) {
+    private String username;
 
+    public AuthenticationResponse autheticate(AuthenticationRequest request) {
         var user = repository.findByUsername(request.getUsername()).orElseThrow();
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
             System.out.println("Password does not match");
@@ -32,6 +35,7 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         System.out.println("JWT Token: " + jwtToken);
         System.out.println("Role: " + user.getRole());
+        this.username = user.getUsername();
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .role(user.getRole().toString())
@@ -60,6 +64,7 @@ public class AuthenticationService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ADMIN)
+                .locations("1,2")
                 .build();
         repository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -68,18 +73,65 @@ public class AuthenticationService {
         .build();
     }
 
-    public AuthenticationResponse authenticateAdmin(AuthenticationRequest request) {
-
-        var user = repository.findByUsername(request.getUsername()).orElseThrow();
-        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            System.out.println("Password does not match");
-            return null;
-        }
+    public AuthenticationResponse registerManager(RegisterRequest request) {
+        var user = User.builder()
+                .firstname(request.getFirstName())
+                .lastname(request.getLastName())
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.MANAGER)
+                .build();
+        repository.save(user);
         var jwtToken = jwtService.generateToken(user);
-        System.out.println("JWT Token: " + jwtToken);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
-                .build();
+        .build();
+    }
+
+    public List<Integer> getUserLocations() {
+        User user = repository.findByUsername(username).orElseThrow();
+        String[] locations = user.getLocations().split(",");
+        List<Integer> locationList = new ArrayList<>();
+        for (String location : locations) {
+            locationList.add(Integer.parseInt(location));
+        }
+        return locationList;
+    }
+
+    public String getUsernameRole(String username) {
+        User user = repository.findByUsername(username).orElseThrow();
+        return user.getRole().toString();
+    }
+
+    public List<User> getAllUsers() {
+        return repository.findAll();
+    }
+
+    public void deleteUser(Integer id) {
+        User user = repository.findById(id).orElseThrow();
+        repository.delete(user);
+    }
+
+    public Boolean checkUserIsAdmin(){
+        User user = repository.findByUsername(username).orElseThrow();
+        return user.getRole().equals(Role.ADMIN);
+    }
+
+    public void editUser(User usernew, Integer id){
+        User user = repository.findById(id).orElseThrow();
+        user.setFirstname(usernew.getFirstname());
+        user.setLastname(usernew.getLastname());
+        user.setUsername(usernew.getUsername());
+        System.out.println("Password: " + usernew.getPassword());
+        //if password is not "" then encode it
+        if(!usernew.getPassword().equals("")){
+            user.setPassword(passwordEncoder.encode(usernew.getPassword()));
+        }
+        ///else keep the old password
+        user.setRole(usernew.getRole());
+        user.setLocations(usernew.getLocations());
+
+        repository.save(user);
     }
 }
 

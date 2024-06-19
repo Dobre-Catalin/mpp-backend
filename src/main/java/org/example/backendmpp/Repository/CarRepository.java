@@ -1,17 +1,29 @@
 package org.example.backendmpp.Repository;
 
 import org.example.backendmpp.Model.Car;
-import org.springframework.data.domain.Example;
+import org.example.backendmpp.Model.Location;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.query.FluentQuery;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 public interface CarRepository extends JpaRepository<Car, Integer> {
     Page<Car> findAll(Pageable pageable);
+
+    Page<Car> findCarsByLocationIsIn(Collection<Location> location, Pageable pageable);
+    Page<Car> findCarsByLocationIsInAndSalePriceIsNull(Collection<Location> location, Pageable pageable);
+
+    List<Car> findCarsBySalePriceIsNullAndLocationIsIn(Collection<Location> locations);
+
+    List<Car> findCarsBySalePriceIsNotNullAndLocation(Location location);
+
+    List<Car> findCarsByLocationAndSalePriceIsNull(Location location);
+
+    List<Car> findCarsBySalePriceNotNull();
+
+    List<Car> findCarsBySalePriceIsNull();
+
+    List<Car> findCarsBySalePriceIsNotNull();
 }
